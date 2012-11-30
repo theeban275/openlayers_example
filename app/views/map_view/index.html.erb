@@ -1,0 +1,76 @@
+<h5>OpenLayers Map Example generated from OpenStreetMap and Spatialite Database.</h5>
+<%= form_tag("/map", :method => "get") do %>
+<%= label_tag(:feature, "Select feature to highlight:") %>
+<% 
+  features = [["amenity"],["boundary"],["building"],["generic"],["landuse"],["natural"]]
+  index = features.index(@feature)
+%>
+<%= select_tag(:feature, options_for_select(features, index)) %>
+<%= submit_tag("Switch") %>
+<% end %>
+<div style="width:800px; height:600px" id="map"></div>
+<script type="text/javascript">
+	// hardcoded area on map
+	var lat=(-33.88641 + -33.91056)/2;
+        var lon=(151.22475 + 151.24753)/2;
+        var zoom=15;
+        var map; //complex object of type OpenLayers.Map
+ 
+        //Initialise the 'map' object
+        function init() {
+ 
+            map = new OpenLayers.Map ("map", {
+                controls:[
+                    new OpenLayers.Control.Navigation(),
+                    new OpenLayers.Control.PanZoomBar(),
+                    new OpenLayers.Control.Permalink(),
+                    new OpenLayers.Control.ScaleLine({geodesic: true}),
+                    new OpenLayers.Control.Permalink('permalink'),
+                    new OpenLayers.Control.MousePosition(),                    
+                    new OpenLayers.Control.Attribution()],
+                maxExtent: new OpenLayers.Bounds(-20037508.34,-20037508.34,20037508.34,20037508.34),
+                maxResolution: 156543.0339,
+                numZoomLevels: 19,
+                units: 'm',
+                projection: new OpenLayers.Projection("EPSG:900913"),
+                displayProjection: new OpenLayers.Projection("EPSG:4326")
+            } );
+ 
+            layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+            layerMapnik.setOpacity(0.4);
+            map.addLayer(layerMapnik); 
+ 
+            layerCycleMap = new OpenLayers.Layer.OSM.CycleMap("CycleMap");
+            layerCycleMap.setOpacity(0.4);
+            map.addLayer(layerCycleMap);
+ 
+            // This is the layer that uses the locally stored tiles
+            var newLayer = new OpenLayers.Layer.OSM("Local Tiles", "http://localhost:3000/tiles/${z}/${x}/${y}.png", {numZoomLevels: 19, alpha: true, isBaseLayer: false});
+            map.addLayer(newLayer);
+	    // This is the end of the layer
+ 
+ 	    var switcherControl = new OpenLayers.Control.LayerSwitcher();
+	    map.addControl(switcherControl);
+	    switcherControl.maximizeControl();
+
+	    var vectors = new OpenLayers.Layer.Vector("Vector Layer");
+	    map.addLayer(vectors);
+
+	    wkt = new OpenLayers.Format.WKT();
+            features = [];
+
+	    // add features from spatialite database query
+	    <% for feature in @spatial_features do %>
+	    	feature = wkt.read("<%= feature.to_s.html_safe %>");
+            	feature.geometry.transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+            	features.push(feature);
+	    <% end %>
+
+	    vectors.addFeatures(features);
+            if( ! map.getCenter() ){
+                var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+                map.setCenter (lonLat, zoom);
+            }
+        }
+	init();
+</script>
