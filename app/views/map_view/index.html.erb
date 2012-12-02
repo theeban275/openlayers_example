@@ -2,10 +2,9 @@
 <%= form_tag("/map", :method => "get") do %>
 <%= label_tag(:feature, "Select feature to highlight:") %>
 <% 
-  features = [["amenity"],["boundary"],["building"],["generic"],["landuse"],["natural"]]
-  index = features.index(@feature)
+  features = [["amenity"],["building"],["generic"],["landuse"],["natural"]]
 %>
-<%= select_tag(:feature, options_for_select(features, index)) %>
+<%= select_tag(:feature, options_for_select(features)) %>
 <%= submit_tag("Switch") %>
 <% end %>
 <div style="width:800px; height:600px" id="map"></div>
